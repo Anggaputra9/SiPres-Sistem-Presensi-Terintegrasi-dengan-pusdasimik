@@ -1,0 +1,73 @@
+@extends('layouts.app')
+
+@section('title', 'Tambah User - Admin')
+
+@section('content')
+<div class="max-w-2xl mx-auto bg-white shadow rounded-lg p-6">
+    <h1 class="text-xl font-bold mb-4">Tambah User</h1>
+
+    <form method="POST" action="{{ route('admin.users.store') }}" class="space-y-4">
+        @csrf
+        <div>
+            <label class="block text-sm font-medium mb-1">Role</label>
+            <select name="role" required class="w-full border rounded px-3 py-2" onchange="toggleFields(this.value)">
+                <option value="">– pilih role –</option>
+                <option value="dosen" {{ old('role') === 'dosen' ? 'selected' : '' }}>Dosen</option>
+                <option value="mahasiswa" {{ old('role') === 'mahasiswa' ? 'selected' : '' }}>Mahasiswa</option>
+            </select>
+            @error('role')<p class="text-rose-600 text-xs mt-1">{{ $message }}</p>@enderror
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Username (NIM/NIP)</label>
+            <input name="username" value="{{ old('username') }}" required maxlength="32" class="w-full border rounded px-3 py-2">
+            @error('username')<p class="text-rose-600 text-xs mt-1">{{ $message }}</p>@enderror
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Nama Lengkap</label>
+            <input name="nama" value="{{ old('nama') }}" required maxlength="100" class="w-full border rounded px-3 py-2">
+            @error('nama')<p class="text-rose-600 text-xs mt-1">{{ $message }}</p>@enderror
+        </div>
+
+        <div id="field-mahasiswa" style="display:none">
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">Program Studi</label>
+                    <input name="program_studi" value="{{ old('program_studi') }}" class="w-full border rounded px-3 py-2">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">Fakultas</label>
+                    <input name="fakultas" value="{{ old('fakultas') }}" class="w-full border rounded px-3 py-2">
+                </div>
+            </div>
+        </div>
+
+        <div id="field-dosen" style="display:none">
+            <label class="block text-sm font-medium mb-1">Jabatan</label>
+            <input name="jabatan" value="{{ old('jabatan') }}" class="w-full border rounded px-3 py-2">
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium mb-1">Password</label>
+            <input type="password" name="password" required minlength="6" class="w-full border rounded px-3 py-2">
+            @error('password')<p class="text-rose-600 text-xs mt-1">{{ $message }}</p>@enderror
+        </div>
+
+        <div class="flex justify-end gap-2">
+            <a href="{{ route('admin.users.index') }}" class="px-4 py-2 rounded border">Batal</a>
+            <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded">Simpan</button>
+        </div>
+    </form>
+</div>
+
+<script>
+function toggleFields(role) {
+    document.getElementById('field-mahasiswa').style.display = role === 'mahasiswa' ? 'block' : 'none';
+    document.getElementById('field-dosen').style.display = role === 'dosen' ? 'block' : 'none';
+}
+@if(old('role'))
+toggleFields('{{ old('role') }}');
+@endif
+</script>
+@endsection

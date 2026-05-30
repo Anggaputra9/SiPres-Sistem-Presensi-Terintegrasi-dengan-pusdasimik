@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'pusat_data' => [
+        'url' => env('PUSAT_DATA_API_URL', 'http://localhost:8000/api'),
+        'token' => env('PUSAT_DATA_API_TOKEN'),
+        'timeout' => env('PUSAT_DATA_API_TIMEOUT', 10),
+    ],
+
 ];

@@ -2,48 +2,77 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+    public const ROLE_DOSEN = 'dosen';
+    public const ROLE_MAHASISWA = 'mahasiswa';
+    public const ROLE_ADMIN = 'admin';
+
     protected $fillable = [
-        'name',
-        'email',
+        'username',
+        'role',
+        'nama',
+        'program_studi',
+        'fakultas',
+        'jabatan',
         'password',
+        'last_synced_at',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
+            'last_synced_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function getAuthPasswordName(): string
+    {
+        return 'password';
+    }
+
+    public function isDosen(): bool
+    {
+        return $this->role === self::ROLE_DOSEN;
+    }
+
+    public function isMahasiswa(): bool
+    {
+        return $this->role === self::ROLE_MAHASISWA;
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === self::ROLE_ADMIN;
+    }
+
+    public function kelasDiampu(): HasMany
+    {
+        return $this->hasMany(Kelas::class, 'dosen_id');
+    }
+
+    public function kelasDiikuti(): BelongsToMany
+    {
+        return $this->belongsToMany(Kelas::class, 'kelas_mahasiswa', 'mahasiswa_id', 'kelas_id')
+            ->withTimestamps();
+    }
+
+    public function kehadiran(): HasMany
+    {
+        return $this->hasMany(Kehadiran::class, 'mahasiswa_id');
     }
 }
