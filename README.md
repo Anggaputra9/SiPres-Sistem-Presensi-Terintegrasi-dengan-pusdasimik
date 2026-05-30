@@ -1,59 +1,119 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Sistem Presensi
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi presensi (kehadiran) yang mendukung 3 role: **Admin**, **Guru**, dan **Murid**.
+Terintegrasi dengan **Pusat Data API** untuk validasi mahasiswa & dosen.
 
-## About Laravel
+## 🎯 Fitur Utama
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+### 👤 Admin
+- Konfigurasi API token Pusat Data via UI (tanpa edit `.env`)
+- Test koneksi ke Pusat Data
+- Manajemen user (CRUD guru & murid)
+- Dashboard ringkasan sistem (total user, kelas, sesi, kehadiran)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+### 👨‍🏫 Guru
+- Membuat kelas & mendaftarkan murid (auto-fetch dari Pusat Data via NIM)
+- Membuat sesi presensi dengan QR code & kode referral
+- Menutup/membuka sesi presensi
+- Tandai kehadiran manual (jika murid tidak bisa scan)
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+### 🎓 Murid
+- Login pakai NIM (auto-provision dari Pusat Data)
+- Scan QR / input kode referral untuk presensi
+- Lihat riwayat kehadiran
 
-## Learning Laravel
+## 🚀 Setup
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+### 1. Konfigurasi `.env`
+```env
+DB_DATABASE=sistem_presensi
+DB_USERNAME=root
+DB_PASSWORD=
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+PUSAT_DATA_API_URL=http://localhost:8000/api
+PUSAT_DATA_API_TOKEN=                # boleh kosong, diisi via halaman admin
+PUSAT_DATA_API_TIMEOUT=10
+```
 
-## Laravel Sponsors
+### 2. Install dependency & generate key
+```bash
+composer install
+php artisan key:generate
+```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+### 3. Buat database
+```bash
+E:\xampp\mysql\bin\mysql.exe -u root -e "CREATE DATABASE sistem_presensi;"
+```
 
-### Premium Partners
+### 4. Migrate & seed
+```bash
+php artisan migrate
+php artisan db:seed
+```
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+Seeder akan membuat:
+- **Admin**  → username `admin`, password `admin123`
+- **Guru** demo (jika token Pusat Data sudah valid) → NIP `198703152012012001`
+- **Murid** demo (jika token Pusat Data sudah valid) → NIM `2021001..2021007`
 
-## Contributing
+> Jika token belum dikonfigurasi, seeder hanya membuat user admin. Lanjutkan ke langkah 5.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+### 5. Jalankan aplikasi
+```bash
+php artisan serve --port=8001
+```
+Akses: <http://localhost:8001>
 
-## Code of Conduct
+### 6. Konfigurasi API Token (sekali setelah deploy)
+1. Login sebagai **Admin** (`admin` / `admin123`)
+2. Buka menu **Konfigurasi API**
+3. Minta token dari admin **Pusat Data** (lihat bagian berikutnya)
+4. Paste token & klik **Simpan**, lalu **Test Koneksi**
+5. Jalankan ulang `php artisan db:seed` untuk provision guru & murid demo (opsional)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 🔐 Cara Mendapatkan API Token dari Pusat Data
 
-## Security Vulnerabilities
+1. Login ke sistem **Pusat Data** sebagai admin (`admin` / `password`)
+2. Buka menu **API Clients**
+3. Buat client baru (misal: `Sistem Presensi`) — atau pakai yang sudah ada
+4. Klik **Issue Token** → beri nama (misal: `presensi-prod`)
+5. **Copy token plaintext** yang ditampilkan (hanya muncul sekali)
+6. Kirim ke admin Sistem Presensi via channel aman
+7. Admin Sistem Presensi paste token di menu **Konfigurasi API**
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Token disimpan di tabel `system_settings` dan di-load otomatis oleh `PusatDataClient` (override nilai `.env`).
 
-## License
+## 🧑‍💻 Akun Demo
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+| Role  | Username             | Password               |
+|-------|----------------------|------------------------|
+| Admin | `admin`              | `admin123`             |
+| Guru  | `198703152012012001` | `198703152012012001`   |
+| Murid | `2021001`            | `2021001`              |
+| Murid | `2021002` … `2021007`| (sama dengan NIM)      |
+
+## 🗄️ Skema Database
+
+- `users` — semua user (admin/guru/murid) dengan kolom `role` (enum)
+- `system_settings` — key/value untuk konfigurasi runtime (mis. API token)
+- `kelas` — kelas yang dibuat guru
+- `kelas_murid` — pivot enrolment murid ke kelas
+- `sesi_presensi` — sesi presensi tiap kelas (punya `kode_referal` & QR)
+- `kehadiran` — log presensi murid per sesi
+
+## 🔗 Integrasi Pusat Data
+
+`PusatDataClient` (di `app/Services`) memanggil endpoint:
+- `GET /api/mahasiswa/{nim}` — lookup murid
+- `GET /api/dosen/{nip}` — lookup guru
+
+Dipakai oleh:
+- **LoginController** — auto-provision user saat login pertama
+- **KelasController** — tambah murid ke kelas
+- **DemoSeeder** — bootstrap data demo
+
+## 📝 Catatan
+- Data master mahasiswa/dosen TIDAK disimpan permanen — selalu validasi ke Pusat Data
+- Field `last_synced_at` di tabel `users` mencatat kapan data terakhir disinkronkan
+- Token API Pusat Data **wajib** dikonfigurasi sebelum guru/murid bisa login pertama kali
