@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Kehadiran;
 use App\Models\Kelas;
 use App\Models\SesiPresensi;
+use App\Models\User;
+use App\Services\PusatDataClient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -95,7 +97,7 @@ class SesiPresensiController extends Controller
             ->with('success', 'Sesi presensi dihapus.');
     }
 
-    public function tandaiManual(Request $request, SesiPresensi $sesi): RedirectResponse
+    public function tandaiManual(Request $request, SesiPresensi $sesi, PusatDataClient $client): RedirectResponse
     {
         abort_unless($sesi->dosen_id === auth()->id(), 403);
 
@@ -105,14 +107,26 @@ class SesiPresensiController extends Controller
             'catatan' => 'nullable|string|max:255',
         ]);
 
+        $waktuScan = now();
+
         Kehadiran::updateOrCreate(
             ['sesi_presensi_id' => $sesi->id, 'mahasiswa_id' => $data['mahasiswa_id']],
             [
                 'status' => $data['status'],
-                'waktu_scan' => now(),
+                'waktu_scan' => $waktuScan,
                 'catatan' => $data['catatan'] ?? null,
             ],
         );
+
+        // Kirim data ke Pusat Data
+        $mahasiswa = User::find($data['mahasiswa_id']);
+        $client->kirimDataPresensi([
+            'nim_mahasiswa' => $mahasiswa->username,
+            'kode_kelas' => $sesi->kelas->kode,
+            'nama_mata_kuliah' => $sesi->kelas->nama_mata_kuliah,
+            'status_kehadiran' => $data['status'],
+            'waktu' => $waktuScan->toDateTimeString(),
+        ]);
 
         return back()->with('success', 'Status kehadiran diperbarui.');
     }

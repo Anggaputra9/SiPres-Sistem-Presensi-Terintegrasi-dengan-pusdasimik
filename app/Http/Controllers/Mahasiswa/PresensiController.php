@@ -8,6 +8,7 @@ use App\Models\SesiPresensi;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use App\Services\PusatDataClient;
 
 class PresensiController extends Controller
 {
@@ -16,14 +17,14 @@ class PresensiController extends Controller
         return view('mahasiswa.presensi.scan');
     }
 
-    public function submit(Request $request): RedirectResponse
+    // Ubah fungsi submit menjadi seperti ini:
+    public function submit(Request $request, PusatDataClient $client): RedirectResponse
     {
         $data = $request->validate([
             'kode_referal' => 'required|string|max:32',
         ]);
 
         $kode = strtoupper(trim($data['kode_referal']));
-
         $sesi = SesiPresensi::where('kode_referal', $kode)->first();
 
         if (! $sesi) {
@@ -32,8 +33,8 @@ class PresensiController extends Controller
         }
 
         $mahasiswa = auth()->user();
-
         $terdaftar = $sesi->kelas->mahasiswa()->where('mahasiswa_id', $mahasiswa->id)->exists();
+
         if (! $terdaftar) {
             return back()->withErrors(['kode_referal' => 'Anda tidak terdaftar di kelas '.$sesi->kelas->kode.'.'])
                 ->withInput();
@@ -72,6 +73,16 @@ class PresensiController extends Controller
             'status' => $status,
             'waktu_scan' => $now,
         ]);
+
+        // === PUSH KE PUSAT DATA ===
+        $client->kirimDataPresensi([
+            'nim_mahasiswa' => $mahasiswa->username, // Kolom username menyimpan NIM
+            'kode_kelas' => $sesi->kelas->kode,
+            'nama_mata_kuliah' => $sesi->kelas->nama_mata_kuliah,
+            'status_kehadiran' => $status,
+            'waktu' => $now->toDateTimeString(),
+        ]);
+        // ==========================
 
         return redirect()->route('mahasiswa.presensi.riwayat')
             ->with('success', 'Presensi tercatat ('.$status.') untuk '.$sesi->kelas->nama_mata_kuliah.'.');

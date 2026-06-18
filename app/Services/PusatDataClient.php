@@ -92,4 +92,17 @@ class PusatDataClient
 
         return $mahasiswa;
     }
+
+    public function kirimDataPresensi(array $dataKehadiran): bool
+    {
+        try {
+            $response = $this->http()->post('presensi/kirim', $dataKehadiran);
+            return $response->successful();
+        } catch (RequestException $e) {
+            // Log error untuk debugging (opsional)
+            \Illuminate\Support\Facades\Log::warning('Gagal mengirim data presensi ke Pusat Data: ' . $e->getMessage());
+            // Mengembalikan false jika Pusat Data sedang down, agar presensi lokal tidak error
+            return false; 
+        }
+    }
 }
