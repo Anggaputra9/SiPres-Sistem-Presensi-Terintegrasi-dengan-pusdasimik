@@ -105,4 +105,42 @@ class PusatDataClient
             return false; 
         }
     }
+
+    /**
+     * Ambil data presensi dari Pusat Data untuk sinkronisasi
+     */
+    public function ambilDataPresensi(array $filter = []): ?array
+    {
+        try {
+            $response = $this->http()->get('presensi/ambil', $filter);
+            
+            if ($response->successful()) {
+                return $response->json();
+            }
+            
+            return null;
+        } catch (RequestException $e) {
+            \Illuminate\Support\Facades\Log::warning('Gagal mengambil data presensi dari Pusat Data: ' . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Cek status sinkronisasi dengan Pusat Data
+     */
+    public function cekStatusSinkronisasi(): ?array
+    {
+        try {
+            $response = $this->http()->get('presensi/status');
+            
+            if ($response->successful()) {
+                return $response->json('data');
+            }
+            
+            return null;
+        } catch (RequestException $e) {
+            \Illuminate\Support\Facades\Log::warning('Gagal cek status sinkronisasi: ' . $e->getMessage());
+            return null;
+        }
+    }
 }
