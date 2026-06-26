@@ -36,6 +36,27 @@ class PusatDataClient
         return $this->withUnit($response->json('data'));
     }
 
+    /**
+     * Check student permissions based on status
+     */
+    public function checkMahasiswaPermissions(string $nim): ?array
+    {
+        try {
+            $response = $this->http()->get("mahasiswa/{$nim}/permissions");
+            
+            if ($response->status() === 404) {
+                return null;
+            }
+            
+            $response->throw();
+            
+            return $response->json('data');
+        } catch (RequestException $e) {
+            \Illuminate\Support\Facades\Log::warning('Gagal cek permissions mahasiswa: ' . $e->getMessage());
+            return null;
+        }
+    }
+
     public function findDosen(string $nip): ?array
     {
         $response = $this->http()->get("dosen/{$nip}");

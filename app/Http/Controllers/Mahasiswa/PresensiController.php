@@ -33,6 +33,15 @@ class PresensiController extends Controller
         }
 
         $mahasiswa = auth()->user();
+        
+        // Cek permissions mahasiswa dari Pusat Data
+        $permissions = $client->checkMahasiswaPermissions($mahasiswa->username);
+        if (!$permissions || !($permissions['permissions']['can_attend'] ?? false)) {
+            $status = $permissions['status_label'] ?? 'tidak aktif';
+            return back()->withErrors([
+                'kode_referal' => "Anda tidak dapat melakukan presensi karena status: {$status}"
+            ])->withInput();
+        }
         $terdaftar = $sesi->kelas->mahasiswa()->where('mahasiswa_id', $mahasiswa->id)->exists();
 
         if (! $terdaftar) {

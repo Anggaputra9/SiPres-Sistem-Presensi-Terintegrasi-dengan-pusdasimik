@@ -41,6 +41,27 @@ class LoginController extends Controller
             ]);
         }
 
+        // CEK STATUS MAHASISWA SEBELUM LOGIN
+        if ($user->isMahasiswa()) {
+            $permissions = $this->pusatData->checkMahasiswaPermissions($user->username);
+            
+            if (!$permissions) {
+                throw ValidationException::withMessages([
+                    'username' => 'Tidak dapat memverifikasi status mahasiswa. Hubungi admin.',
+                ]);
+            }
+            
+            $status = $permissions['status'] ?? null;
+            $statusLabel = $permissions['status_label'] ?? 'tidak diketahui';
+            
+            // Hanya mahasiswa dengan status 'aktif' yang boleh login
+            if ($status !== 'aktif') {
+                throw ValidationException::withMessages([
+                    'username' => "Maaf, Anda berstatus {$statusLabel}. Hanya mahasiswa aktif yang dapat login ke sistem presensi.",
+                ]);
+            }
+        }
+
         Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
