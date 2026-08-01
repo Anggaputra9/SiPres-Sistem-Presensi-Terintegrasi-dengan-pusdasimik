@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//e/kuliah/semester6/laravel/pusat-data/**)",
+      "Bash(php artisan *)",
+      "Bash(curl -s -H \"Accept: application/json\" -H \"Authorization: Bearer 9|EX5zIRhIIgV4bPydrcifY1pKOlKaOw1aya33DK7G5066f777\" http://localhost:8000/api/me)",
+      "Bash(curl -s -H \"Accept: application/json\" -H \"Authorization: Bearer 9|EX5zIRhIIgV4bPydrcifY1pKOlKaOw1aya33DK7G5066f777\" http://localhost:8000/api/mahasiswa/2021001)",
+      "Bash(curl -s -H \"Accept: application/json\" -H \"Authorization: Bearer 9|EX5zIRhIIgV4bPydrcifY1pKOlKaOw1aya33DK7G5066f777\" \"http://localhost:8000/api/units\")",
+      "Bash(curl -s -c /tmp/cookies.txt http://localhost:8001/login -o /tmp/loginpage.html)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -b /tmp/cookies.txt http://localhost:8001/murid/dashboard -o /tmp/dashboard.html -w \"HTTP:%{http_code}\\\\n\")",
+      "Bash(curl -s -c /tmp/cookies2.txt http://localhost:8001/login -o /tmp/loginpage2.html)",
+      "Bash(curl -s -b /tmp/cookies2.txt http://localhost:8001/guru/kelas -o /tmp/g_kelas.html -w \"HTTP:%{http_code}\\\\n\")",
+      "Bash(curl *)"
+    ]
+  }
+}
