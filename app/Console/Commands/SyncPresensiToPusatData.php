@@ -3,18 +3,19 @@
 namespace App\Console\Commands;
 
 use App\Models\Kehadiran;
-use App\Services\PusatDataClient;
+use App\Services\PresensiPusatDataSync;
 use Illuminate\Console\Command;
 
 class SyncPresensiToPusatData extends Command
 {
     protected $signature = 'presensi:sync-to-pusat';
+
     protected $description = 'Sync semua data kehadiran yang ada ke Pusat Data';
 
-    public function handle(PusatDataClient $client): int
+    public function handle(PresensiPusatDataSync $presensiSync): int
     {
         $this->info('🔄 Memulai sinkronisasi data presensi ke Pusat Data...');
-        
+
         // Ambil semua data kehadiran dengan relasi yang dibutuhkan
         $kehadiran = Kehadiran::with(['sesi.kelas', 'mahasiswa'])
             ->orderBy('waktu_scan')
@@ -22,11 +23,12 @@ class SyncPresensiToPusatData extends Command
 
         if ($kehadiran->isEmpty()) {
             $this->warn('⚠️  Tidak ada data kehadiran untuk disinkronkan.');
+
             return Command::SUCCESS;
         }
 
         $this->info("📊 Total data kehadiran: {$kehadiran->count()}");
-        
+
         $berhasil = 0;
         $gagal = 0;
 
@@ -35,13 +37,7 @@ class SyncPresensiToPusatData extends Command
 
         foreach ($kehadiran as $item) {
             try {
-                $sukses = $client->kirimDataPresensi([
-                    'nim_mahasiswa' => $item->mahasiswa->username,
-                    'kode_kelas' => $item->sesi->kelas->kode,
-                    'nama_mata_kuliah' => $item->sesi->kelas->nama_mata_kuliah,
-                    'status_kehadiran' => $item->status,
-                    'waktu' => $item->waktu_scan->toDateTimeString(),
-                ]);
+                $sukses = $presensiSync->kirim($item);
 
                 if ($sukses) {
                     $berhasil++;
@@ -62,7 +58,7 @@ class SyncPresensiToPusatData extends Command
         $progressBar->finish();
         $this->newLine(2);
 
-        $this->info("✅ Sinkronisasi selesai!");
+        $this->info('✅ Sinkronisasi selesai!');
         $this->table(
             ['Status', 'Jumlah'],
             [

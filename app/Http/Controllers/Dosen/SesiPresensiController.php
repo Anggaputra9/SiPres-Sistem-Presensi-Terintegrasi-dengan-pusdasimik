@@ -6,8 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Kehadiran;
 use App\Models\Kelas;
 use App\Models\SesiPresensi;
-use App\Models\User;
-use App\Services\PusatDataClient;
+use App\Services\PresensiPusatDataSync;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -97,7 +96,7 @@ class SesiPresensiController extends Controller
             ->with('success', 'Sesi presensi dihapus.');
     }
 
-    public function tandaiManual(Request $request, SesiPresensi $sesi, PusatDataClient $client): RedirectResponse
+    public function tandaiManual(Request $request, SesiPresensi $sesi, PresensiPusatDataSync $presensiSync): RedirectResponse
     {
         abort_unless($sesi->dosen_id === auth()->id(), 403);
 
@@ -109,7 +108,7 @@ class SesiPresensiController extends Controller
 
         $waktuScan = now();
 
-        Kehadiran::updateOrCreate(
+        $kehadiran = Kehadiran::updateOrCreate(
             ['sesi_presensi_id' => $sesi->id, 'mahasiswa_id' => $data['mahasiswa_id']],
             [
                 'status' => $data['status'],
@@ -118,15 +117,7 @@ class SesiPresensiController extends Controller
             ],
         );
 
-        // Kirim data ke Pusat Data
-        $mahasiswa = User::find($data['mahasiswa_id']);
-        $client->kirimDataPresensi([
-            'nim_mahasiswa' => $mahasiswa->username,
-            'kode_kelas' => $sesi->kelas->kode,
-            'nama_mata_kuliah' => $sesi->kelas->nama_mata_kuliah,
-            'status_kehadiran' => $data['status'],
-            'waktu' => $waktuScan->toDateTimeString(),
-        ]);
+        $presensiSync->kirim($kehadiran);
 
         return back()->with('success', 'Status kehadiran diperbarui.');
     }
