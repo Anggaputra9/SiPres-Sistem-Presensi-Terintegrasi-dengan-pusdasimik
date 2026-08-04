@@ -16,7 +16,7 @@ class UserController extends Controller
         $role = $request->get('role');
 
         $users = User::query()
-            ->when($role, fn($q) => $q->where('role', $role))
+            ->when($role, fn ($q) => $q->where('role', $role))
             ->whereIn('role', [User::ROLE_DOSEN, User::ROLE_MAHASISWA])
             ->latest()
             ->paginate(20);
@@ -27,6 +27,13 @@ class UserController extends Controller
     public function create(): View
     {
         return view('admin.users.create');
+    }
+
+    public function show(User $user): RedirectResponse
+    {
+        abort_if($user->role === User::ROLE_ADMIN, 403);
+
+        return redirect()->route('admin.users.edit', $user);
     }
 
     public function store(Request $request): RedirectResponse
@@ -61,7 +68,7 @@ class UserController extends Controller
         abort_if($user->role === User::ROLE_ADMIN, 403);
 
         $data = $request->validate([
-            'username' => 'required|string|max:32|unique:users,username,' . $user->id,
+            'username' => 'required|string|max:32|unique:users,username,'.$user->id,
             'role' => 'required|in:dosen,mahasiswa',
             'nama' => 'required|string|max:100',
             'program_studi' => 'nullable|string|max:100',

@@ -5,10 +5,10 @@ namespace App\Http\Controllers\Mahasiswa;
 use App\Http\Controllers\Controller;
 use App\Models\Kehadiran;
 use App\Models\SesiPresensi;
+use App\Services\PresensiPusatDataSync;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
-use App\Services\PusatDataClient;
 
 class PresensiController extends Controller
 {
@@ -17,8 +17,7 @@ class PresensiController extends Controller
         return view('mahasiswa.presensi.scan');
     }
 
-    // Ubah fungsi submit menjadi seperti ini:
-    public function submit(Request $request, PusatDataClient $client): RedirectResponse
+    public function submit(Request $request, PresensiPusatDataSync $presensiSync): RedirectResponse
     {
         $data = $request->validate([
             'kode_referal' => 'required|string|max:32',
@@ -76,22 +75,14 @@ class PresensiController extends Controller
         $batasTerlambat = $sesi->mulai->copy()->addMinutes(15);
         $status = $now->gt($batasTerlambat) ? 'terlambat' : 'hadir';
 
-        Kehadiran::create([
+        $kehadiran = Kehadiran::create([
             'sesi_presensi_id' => $sesi->id,
             'mahasiswa_id' => $mahasiswa->id,
             'status' => $status,
             'waktu_scan' => $now,
         ]);
 
-        // === PUSH KE PUSAT DATA ===
-        $client->kirimDataPresensi([
-            'nim_mahasiswa' => $mahasiswa->username, // Kolom username menyimpan NIM
-            'kode_kelas' => $sesi->kelas->kode,
-            'nama_mata_kuliah' => $sesi->kelas->nama_mata_kuliah,
-            'status_kehadiran' => $status,
-            'waktu' => $now->toDateTimeString(),
-        ]);
-        // ==========================
+        $presensiSync->kirim($kehadiran);
 
         return redirect()->route('mahasiswa.presensi.riwayat')
             ->with('success', 'Presensi tercatat ('.$status.') untuk '.$sesi->kelas->nama_mata_kuliah.'.');
